@@ -147,6 +147,7 @@ function showRollButton(label) {
 
 function hideControls() {
   $('btn-roll').style.display = 'none';
+  hideStopButton();
 }
 
 // ===== GAME FLOW =====
@@ -239,11 +240,9 @@ function performRoll() {
       }
     });
 
-    turnState.rolls++;
+       turnState.rolls++;
     isProcessing = false;
 
-    // Only auto-stop on 421
-    const combo = evaluate(turnState.values);
     if (combo.type === '"421"') {
       finishTurn();
       return;
@@ -256,6 +255,7 @@ function performRoll() {
       updateRollInfo();
       const remaining = turnState.maxRolls - turnState.rolls;
       showRollButton(`Roll Again (${remaining} left)`);
+      showStopButton();
     }
   }, delay);
 }
@@ -265,6 +265,28 @@ function finishTurn() {
   turnState.kept = [true, true, true];
   diceEls.forEach((_, i) => setDieState(i, 'locked'));
   hideControls();
+   
+   function showStopButton() {
+  let btn = $('btn-stop');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'btn-stop';
+    btn.className = 'btn btn-ghost btn-small';
+    btn.textContent = 'Stop here';
+    btn.addEventListener('click', () => {
+      if (turnState && !turnState.finished && turnState.rolls > 0) {
+        finishTurn();
+      }
+    });
+    $('controls').appendChild(btn);
+  }
+  btn.style.display = '';
+}
+
+function hideStopButton() {
+  const btn = $('btn-stop');
+  if (btn) btn.style.display = 'none';
+}
   updateRollInfo();
 
   const combo = evaluate(turnState.values);
@@ -550,12 +572,17 @@ function showGameOver() {
  $('rules-modal').addEventListener('click', e => { if (e.target === $('rules-modal')) hideModal('rules-modal'); });
  $('choice-modal').addEventListener('click', e => { if (e.target === $('choice-modal')) hideModal('choice-modal'); });
 
- $('btn-roll').addEventListener('click', () => {
-  if (turnState && turnState.rolls > 0 && turnState.kept.some(k => k) && !turnState.finished) {
-    finishTurn();
-  } else {
-    onRollClick();
-  }
+  $('btn-roll').addEventListener('click', () => {
+  onRollClick();
+});
+
+diceEls.forEach((el, i) => {
+  el.addEventListener('click', () => {
+    if (turnState && turnState.rolls > 0 && !turnState.finished) {
+      onDieClick(i);
+      updateRollInfo();
+    }
+  });
 });
 
 diceEls.forEach((el, i) => {
