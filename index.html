@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>421</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- ===== MENU ===== -->
+  <div id="menu" class="screen active">
+    <div class="menu-dice-row">
+      <div class="menu-die" data-val="4">4</div>
+      <div class="menu-die" data-val="2">2</div>
+      <div class="menu-die" data-val="1">1</div>
+    </div>
+    <h1 class="menu-title">421</h1>
+    <p class="menu-sub">Classic French Dice Game</p>
+    <div class="menu-buttons">
+      <button class="btn btn-primary" id="btn-pvc">Player vs Computer</button>
+      <button class="btn btn-secondary" id="btn-pvp">Player 1 vs Player 2</button>
+    </div>
+    <button class="btn btn-ghost" id="btn-rules">How to Play</button>
+  </div>
+
+  <!-- ===== GAME ===== -->
+  <div id="game" class="screen">
+    <header class="game-header">
+      <div class="player-bar" id="bar-p1">
+        <span class="player-name" id="name-p1">Player 1</span>
+        <span class="player-tokens"><span id="tokens-p1">21</span> tokens</span>
+      </div>
+      <div class="round-badge" id="round-badge">Round 1</div>
+      <div class="player-bar" id="bar-p2">
+        <span class="player-name" id="name-p2">Computer</span>
+        <span class="player-tokens"><span id="tokens-p2">21</span> tokens</span>
+      </div>
+    </header>
+
+    <div class="turn-indicator" id="turn-indicator">Player 1's Turn</div>
+
+    <section class="dice-area">
+      <div class="dice-row" id="dice-row">
+        <div class="die" data-index="0"><div class="die-face"></div></div>
+        <div class="die" data-index="1"><div class="die-face"></div></div>
+        <div class="die" data-index="2"><div class="die-face"></div></div>
+      </div>
+      <div class="roll-info" id="roll-info"></div>
+    </section>
+
+    <section class="controls" id="controls">
+      <button class="btn btn-primary btn-roll" id="btn-roll">Roll Dice</button>
+    </section>
+
+    <section class="log-area" id="log-area">
+      <div class="log-content" id="log-content"></div>
+    </section>
+
+    <footer class="game-footer">
+      <button class="btn btn-ghost btn-small" id="btn-quit">Quit</button>
+    </footer>
+  </div>
+
+  <!-- ===== ROUND RESOLVER ===== -->
+  <div id="resolver" class="screen">
+    <div class="resolver-inner">
+      <div class="resolver-combos">
+        <div class="resolver-col">
+          <div class="resolver-label" id="res-name-p1">Player 1</div>
+          <div class="resolver-dice" id="res-dice-p1"></div>
+          <div class="resolver-score" id="res-score-p1"></div>
+        </div>
+        <div class="resolver-vs">VS</div>
+        <div class="resolver-col">
+          <div class="resolver-label" id="res-name-p2">Player 2</div>
+          <div class="resolver-dice" id="res-dice-p2"></div>
+          <div class="resolver-score" id="res-score-p2"></div>
+        </div>
+      </div>
+      <div class="resolver-result" id="resolver-result"></div>
+      <div class="resolver-actions" id="resolver-actions"></div>
+    </div>
+  </div>
+
+  <!-- ===== GAME OVER ===== -->
+  <div id="gameover" class="screen">
+    <div class="gameover-inner">
+      <div class="gameover-dice-row">
+        <div class="menu-die small" data-val="4">4</div>
+        <div class="menu-die small" data-val="2">2</div>
+        <div class="menu-die small" data-val="1">1</div>
+      </div>
+      <h2 class="gameover-title" id="gameover-title">Victory!</h2>
+      <p class="gameover-sub" id="gameover-sub"></p>
+      <button class="btn btn-primary" id="btn-replay">Play Again</button>
+      <button class="btn btn-ghost" id="btn-menu">Main Menu</button>
+    </div>
+  </div>
+
+  <!-- ===== RULES MODAL ===== -->
+  <div id="rules-modal" class="modal-overlay">
+   <div class="rules-text">
+  <p>Two players, three dice, 21 tokens each. Each round, both players roll up to three times, setting aside dice to keep. The player with the <strong>higher</strong> combination pays the lower the token value of the winner's score. Win by reaching <strong>0 tokens</strong>.</p>
+  <h3>Special Combinations ("figures")</h3>
+  <ul>
+    <li><strong>"421"</strong> &mdash; 4, 2, 1. Worth <strong>20 points</strong> (all tokens minus one). Strongest combo.</li>
+    <li><strong>"Fiches"</strong> &mdash; Two aces + any other die. Worth the third die's value (2 to 6 points).</li>
+    <li><strong>"Tierce"</strong> &mdash; Three of a kind. Worth the die value (2 to 6), except 1-1-1 which is worth 7. Loses to "fiches" of the same value.</li>
+    <li><strong>"Suites"</strong> &mdash; Three consecutive numbers. Worth 2 points. 6-5-4 beats 3-2-1.</li>
+    <li><strong>"Nénette"</strong> &mdash; 2-2-1. Worth 4 points, but loses to any other 4-point combo.</li>
+  </ul>
+  <h3>Other Combos</h3>
+  <p>Worth 1 point. Ranked by highest die, then second, then third (e.g. 6-6-5 beats 5-5-3).</p>
+  <h3>"Égalité"</h3>
+  <p>Same combination, different number of rolls: the player who needed fewer rolls wins and pays the tied value.</p>
+  <h3>"Rampo"</h3>
+  <p>Same combination, same number of rolls. First player chooses:</p>
+  <ul>
+    <li><strong>"pour ce qui est"</strong> &mdash; pay the original tied value.</li>
+    <li><strong>"pour ce qui vient"</strong> &mdash; both re-roll once; pay the new value.</li>
+  </ul>
+</div>
+      <button class="btn btn-ghost" id="btn-close-rules">Close</button>
+    </div>
+  </div>
+
+  <!-- ===== CHOICE MODAL (for Rampo / AI actions) ===== -->
+  <div id="choice-modal" class="modal-overlay">
+    <div class="modal-box">
+      <p id="choice-text"></p>
+      <div class="modal-buttons" id="choice-buttons"></div>
+    </div>
+  </div>
+
+  <!-- ===== HANDOFF SCREEN ===== -->
+  <div id="handoff" class="screen">
+    <div class="handoff-inner">
+      <p class="handoff-text" id="handoff-text">Pass the phone to Player 2</p>
+      <button class="btn btn-primary" id="btn-handoff">Ready</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
