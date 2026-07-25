@@ -17,7 +17,13 @@ let isProcessing = false;
 
 // ===== DOM REFS =====
 const $ = id => document.getElementById(id);
-const diceEls = [0,1,2].map(i => $(`dice-row`).children[i]);
+
+// Fonction pour obtenir les éléments dés dynamiquement (plus robuste)
+function getDiceEls() {
+  const diceRow = $('dice-row');
+  if (!diceRow) return [];
+  return Array.from(diceRow.children).slice(0, 3);
+}
 
 // ===== COMBINATION EVALUATION =====
 function evaluate(dice) {
@@ -85,12 +91,17 @@ function renderDie(el, value) {
 }
 
 function renderAllDice(values) {
-  values.forEach((v, i) => renderDie(diceEls[i], v));
+  const dice = getDiceEls();
+  values.forEach((v, i) => {
+    if (dice[i]) renderDie(dice[i], v);
+  });
 }
 
 function setDieState(index, state) {
-  diceEls[index].classList.remove('selected', 'locked', 'no-tap', 'rolling');
-  if (state) diceEls[index].classList.add(state);
+  const dice = getDiceEls();
+  if (!dice[index]) return;
+  dice[index].classList.remove('selected', 'locked', 'no-tap', 'rolling');
+  if (state) dice[index].classList.add(state);
 }
 
 // ===== SCREEN MANAGEMENT =====
@@ -207,7 +218,8 @@ function startTurn(pIdx) {
   };
   updateTurnIndicator();
   renderAllDice([null, null, null]);
-  diceEls.forEach((_, i) => setDieState(i, null));
+  const dice = getDiceEls();
+  dice.forEach((_, i) => setDieState(i, null));
   updateRollInfo();
   hideControls();
 
@@ -236,6 +248,7 @@ function onDieClick(index) {
 
 function performRoll() {
   isProcessing = true;
+  const dice = getDiceEls();
   const toRoll = turnState.kept.map(k => !k);
   const anyRolling = toRoll.some(r => r);
 
@@ -244,9 +257,9 @@ function performRoll() {
       if (r) {
         setDieState(i, 'rolling');
         const intv = setInterval(() => {
-          renderDie(diceEls[i], Math.ceil(Math.random() * 6));
+          if (dice[i]) renderDie(dice[i], Math.ceil(Math.random() * 6));
         }, 80);
-        diceEls[i]._animIntv = intv;
+        if (dice[i]) dice[i]._animIntv = intv;
       }
     });
   }
@@ -254,17 +267,18 @@ function performRoll() {
   const delay = anyRolling ? 400 : 50;
   setTimeout(() => {
     toRoll.forEach((r, i) => {
-      if (r) {
-        clearInterval(diceEls[i]._animIntv);
+      if (r && dice[i]) {
+        clearInterval(dice[i]._animIntv);
         turnState.values[i] = Math.ceil(Math.random() * 6);
-        renderDie(diceEls[i], turnState.values[i]);
+        renderDie(dice[i], turnState.values[i]);
         setDieState(i, null);
       }
     });
 
     turnState.rolls++;
+    isProcessing = false;
 
-    // IMPORTANT: Évaluer la combinaison AVANT de l'utiliser
+    // FIX: Évaluer la combinaison AVANT de l'utiliser
     const combo = evaluate(turnState.values);
 
     if (combo.type === '"421"') {
@@ -275,7 +289,7 @@ function performRoll() {
     if (turnState.rolls >= turnState.maxRolls) {
       finishTurn();
     } else {
-      diceEls.forEach(el => el.classList.remove('no-tap'));
+      dice.forEach(el => el.classList.remove('no-tap'));
       updateRollInfo();
       const remaining = turnState.maxRolls - turnState.rolls;
       showRollButton(`Roll Again (${remaining} left)`);
@@ -287,7 +301,8 @@ function performRoll() {
 function finishTurn() {
   turnState.finished = true;
   turnState.kept = [true, true, true];
-  diceEls.forEach((_, i) => setDieState(i, 'locked'));
+  const dice = getDiceEls();
+  dice.forEach((_, i) => setDieState(i, 'locked'));
   hideControls();
   updateRollInfo();
 
@@ -313,6 +328,7 @@ function aiTurn() {
 }
 
 function rollAI() {
+  const dice = getDiceEls();
   const toRoll = turnState.kept.map(k => !k);
   const anyRolling = toRoll.some(r => r);
 
@@ -321,9 +337,9 @@ function rollAI() {
       if (r) {
         setDieState(i, 'rolling');
         const intv = setInterval(() => {
-          renderDie(diceEls[i], Math.ceil(Math.random() * 6));
+          if (dice[i]) renderDie(dice[i], Math.ceil(Math.random() * 6));
         }, 80);
-        diceEls[i]._animIntv = intv;
+        if (dice[i]) dice[i]._animIntv = intv;
       }
     });
   }
@@ -331,10 +347,10 @@ function rollAI() {
   const delay = anyRolling ? 500 : 50;
   setTimeout(() => {
     toRoll.forEach((r, i) => {
-      if (r) {
-        clearInterval(diceEls[i]._animIntv);
+      if (r && dice[i]) {
+        clearInterval(dice[i]._animIntv);
         turnState.values[i] = Math.ceil(Math.random() * 6);
-        renderDie(diceEls[i], turnState.values[i]);
+        renderDie(dice[i], turnState.values[i]);
         setDieState(i, null);
       }
     });
@@ -356,7 +372,7 @@ function rollAI() {
     // AI decision
     const keep = aiDecideKeep(turnState.values);
     turnState.kept = keep;
-    diceEls.forEach((_, i) => setDieState(i, keep[i] ? 'locked' : null));
+    dice.forEach((_, i) => setDieState(i, keep[i] ? 'locked' : null));
 
     $('roll-info').textContent = 'Computer is thinking...';
 
@@ -578,14 +594,41 @@ $('btn-roll').addEventListener('click', () => {
   onRollClick();
 });
 
-diceEls.forEach((el, i) => {
-  el.addEventListener('click', () => {
-    if (turnState && turnState.rolls > 0 && !turnState.finished) {
-      onDieClick(i);
-      updateRollInfo();
+// Attacher les écouteurs une fois que le DOM est prêt
+function attachDiceListeners() {
+  const diceRow = $('dice-row');
+  if (!diceRow) return;
+  
+  // Utiliser la délégation d'événements pour plus de robustesse
+  diceRow.addEventListener('click', (e) => {
+    const dieEl = e.target.closest('[class*="dice"]') || e.target.parentElement;
+    if (!dieEl || !dieEl.parentElement) return;
+    
+    const index = Array.from(diceRow.children).indexOf(dieEl);
+    if (index === -1 || index === undefined) return;
+    
+    // Vérifier que c'est au bon moment
+    if (!turnState || turnState.finished) return;
+    if (turnState.rolls === 0) return;  // Ne peut cliquer que après un lancer
+    
+    // Effectuer le clic
+    onDieClick(index);
+    
+    // Mettre à jour l'interface
+    updateRollInfo();
+    
+    // Mettre à jour le texte du bouton Roll
+    if (turnState.kept.some(k => k)) {
+      $('btn-roll').textContent = 'Keep & End Turn';
+    } else {
+      const remaining = turnState.maxRolls - turnState.rolls;
+      $('btn-roll').textContent = `Roll Again (${remaining} left)`;
     }
   });
-});
+}
+
+// Attacher les écouteurs au lancement
+attachDiceListeners();
 
 $('btn-quit').addEventListener('click', () => showScreen('menu'));
 $('btn-handoff').addEventListener('click', () => {
