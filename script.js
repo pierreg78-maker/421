@@ -150,6 +150,28 @@ function hideControls() {
   hideStopButton();
 }
 
+function showStopButton() {
+  let btn = $('btn-stop');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'btn-stop';
+    btn.className = 'btn btn-ghost btn-small';
+    btn.textContent = 'Stop here';
+    btn.addEventListener('click', () => {
+      if (turnState && !turnState.finished && turnState.rolls > 0) {
+        finishTurn();
+      }
+    });
+    $('controls').appendChild(btn);
+  }
+  btn.style.display = '';
+}
+
+function hideStopButton() {
+  const btn = $('btn-stop');
+  if (btn) btn.style.display = 'none';
+}
+
 // ===== GAME FLOW =====
 function startGame(m) {
   mode = m;
@@ -240,8 +262,10 @@ function performRoll() {
       }
     });
 
-       turnState.rolls++;
-    isProcessing = false;
+    turnState.rolls++;
+
+    // IMPORTANT: Évaluer la combinaison AVANT de l'utiliser
+    const combo = evaluate(turnState.values);
 
     if (combo.type === '"421"') {
       finishTurn();
@@ -265,28 +289,6 @@ function finishTurn() {
   turnState.kept = [true, true, true];
   diceEls.forEach((_, i) => setDieState(i, 'locked'));
   hideControls();
-   
-   function showStopButton() {
-  let btn = $('btn-stop');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'btn-stop';
-    btn.className = 'btn btn-ghost btn-small';
-    btn.textContent = 'Stop here';
-    btn.addEventListener('click', () => {
-      if (turnState && !turnState.finished && turnState.rolls > 0) {
-        finishTurn();
-      }
-    });
-    $('controls').appendChild(btn);
-  }
-  btn.style.display = '';
-}
-
-function hideStopButton() {
-  const btn = $('btn-stop');
-  if (btn) btn.style.display = 'none';
-}
   updateRollInfo();
 
   const combo = evaluate(turnState.values);
@@ -565,14 +567,14 @@ function showGameOver() {
 }
 
 // ===== EVENT LISTENERS =====
- $('btn-pvc').addEventListener('click', () => startGame('pvc'));
- $('btn-pvp').addEventListener('click', () => startGame('pvp'));
- $('btn-rules').addEventListener('click', () => showModal('rules-modal'));
- $('btn-close-rules').addEventListener('click', () => hideModal('rules-modal'));
- $('rules-modal').addEventListener('click', e => { if (e.target === $('rules-modal')) hideModal('rules-modal'); });
- $('choice-modal').addEventListener('click', e => { if (e.target === $('choice-modal')) hideModal('choice-modal'); });
+$('btn-pvc').addEventListener('click', () => startGame('pvc'));
+$('btn-pvp').addEventListener('click', () => startGame('pvp'));
+$('btn-rules').addEventListener('click', () => showModal('rules-modal'));
+$('btn-close-rules').addEventListener('click', () => hideModal('rules-modal'));
+$('rules-modal').addEventListener('click', e => { if (e.target === $('rules-modal')) hideModal('rules-modal'); });
+$('choice-modal').addEventListener('click', e => { if (e.target === $('choice-modal')) hideModal('choice-modal'); });
 
-  $('btn-roll').addEventListener('click', () => {
+$('btn-roll').addEventListener('click', () => {
   onRollClick();
 });
 
@@ -585,27 +587,13 @@ diceEls.forEach((el, i) => {
   });
 });
 
-diceEls.forEach((el, i) => {
-  el.addEventListener('click', () => {
-    if (turnState && turnState.rolls > 0 && !turnState.finished) {
-      onDieClick(i);
-      if (turnState.kept.some(k => k)) {
-        $('btn-roll').textContent = 'Keep & End Turn';
-      } else {
-        const remaining = turnState.maxRolls - turnState.rolls;
-        $('btn-roll').textContent = `Roll Again (${remaining} left)`;
-      }
-    }
-  });
-});
-
- $('btn-quit').addEventListener('click', () => showScreen('menu'));
- $('btn-handoff').addEventListener('click', () => {
+$('btn-quit').addEventListener('click', () => showScreen('menu'));
+$('btn-handoff').addEventListener('click', () => {
   showScreen('game');
   showRollButton('Roll Dice');
 });
- $('btn-replay').addEventListener('click', () => startGame(mode));
- $('btn-menu').addEventListener('click', () => showScreen('menu'));
+$('btn-replay').addEventListener('click', () => startGame(mode));
+$('btn-menu').addEventListener('click', () => showScreen('menu'));
 
 // ===== INIT =====
 showScreen('menu');
