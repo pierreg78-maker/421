@@ -190,15 +190,15 @@ function updateRollInfo() {
   if (turnState.rolls === 0) {
     $('roll-info').textContent = '';
   } else if (n === 0) {
-    $('roll-info').textContent = 'Tap dice to keep them';
+    $('roll-info').textContent = 'Touche un dé pour le garder';
   } else {
-    $('roll-info').textContent = `${n} dice kept — tap to toggle`;
+    $('roll-info').textContent = `${n} dé${n > 1 ? 's' : ''} gardé${n > 1 ? 's' : ''} — touche pour changer`;
   }
 }
 
 function showRollButton(label) {
   const btn = $('btn-roll');
-  btn.textContent = label || 'Roll Dice';
+  btn.textContent = label || 'Lancer';
   btn.style.display = '';
 }
 
@@ -213,7 +213,7 @@ function showStopButton() {
     btn = document.createElement('button');
     btn.id = 'btn-stop';
     btn.className = 'btn btn-ghost btn-small';
-    btn.textContent = 'Stop here';
+    btn.textContent = 'Arrêter';
     btn.addEventListener('click', () => {
       if (turnState && !turnState.finished && turnState.rolls > 0) {
         finishTurn();
@@ -274,7 +274,7 @@ function startTurn(pIdx) {
     setTimeout(() => aiTurn(), 600);
   } else {
     showScreen('game');
-    showRollButton('Roll Dice');
+    showRollButton('Lancer');
   }
 }
 
@@ -339,7 +339,7 @@ function performRoll() {
       dice.forEach(el => el.classList.remove('no-tap'));
       updateRollInfo();
       const remaining = turnState.maxRolls - turnState.rolls;
-      showRollButton(`Roll Again (${remaining} left)`);
+      showRollButton(`Relancer (${remaining})`);
       showStopButton();
     }
   }, delay);
@@ -676,33 +676,39 @@ $('btn-roll').addEventListener('click', () => {
 function attachDiceListeners() {
   const diceRow = $('dice-row');
   if (!diceRow) return;
-  
-  // Utiliser la délégation d'événements pour plus de robustesse
-  diceRow.addEventListener('click', (e) => {
-    const dieEl = e.target.closest('[class*="dice"]') || e.target.parentElement;
-    if (!dieEl || !dieEl.parentElement) return;
-    
-    const index = Array.from(diceRow.children).indexOf(dieEl);
-    if (index === -1 || index === undefined) return;
-    
-    // Vérifier que c'est au bon moment
-    if (!turnState || turnState.finished) return;
-    if (turnState.rolls === 0) return;  // Ne peut cliquer que après un lancer
-    
-    // Effectuer le clic
-    onDieClick(index);
-    
-    // Mettre à jour l'interface
-    updateRollInfo();
-    
-    // Mettre à jour le texte du bouton Roll
-    if (turnState.kept.some(k => k)) {
-      $('btn-roll').textContent = 'Keep & End Turn';
-    } else {
-      const remaining = turnState.maxRolls - turnState.rolls;
-      $('btn-roll').textContent = `Roll Again (${remaining} left)`;
+
+  // Délégation d'événements (click + touch)
+  const handleDieTap = (e) => {
+    // Trouver l'élément dé le plus proche parmi les enfants directs de dice-row
+    let dieEl = e.target;
+    while (dieEl && dieEl !== diceRow) {
+      if (dieEl.parentElement === diceRow) break;
+      dieEl = dieEl.parentElement;
     }
-  });
+    if (!dieEl || dieEl.parentElement !== diceRow) return;
+
+    const index = Array.from(diceRow.children).indexOf(dieEl);
+    if (index < 0 || index > 2) return;
+
+    // Seulement après un premier lancer et si le tour n'est pas fini
+    if (!turnState || turnState.finished) return;
+    if (turnState.rolls === 0) return;
+    // Ne pas permettre de cliquer pendant une animation
+    if (isProcessing) return;
+
+    onDieClick(index);
+
+    // Mettre à jour le texte du bouton (court)
+    const remaining = turnState.maxRolls - turnState.rolls;
+    $('btn-roll').textContent = `Relancer (${remaining})`;
+  };
+
+  diceRow.addEventListener('click', handleDieTap);
+  // Support tactile (évite le double-tap delay sur mobile)
+  diceRow.addEventListener('touchend', (e) => {
+    e.preventDefault(); // empêche le click fantôme
+    handleDieTap(e);
+  }, { passive: false });
 }
 
 // Attacher les écouteurs au lancement
@@ -711,7 +717,7 @@ attachDiceListeners();
 $('btn-quit').addEventListener('click', () => showScreen('menu'));
 $('btn-handoff').addEventListener('click', () => {
   showScreen('game');
-  showRollButton('Roll Dice');
+  showRollButton('Lancer');
 });
 $('btn-replay').addEventListener('click', () => startGame(mode));
 $('btn-menu').addEventListener('click', () => showScreen('menu'));
