@@ -12,6 +12,22 @@ body{
 button{font-family:inherit;cursor:pointer;border:none;outline:none;-webkit-tap-highlight-color:transparent}
 button:focus-visible{outline:2px solid #c99a2e;outline-offset:2px}
 
+/* ===== Bouton retour au village ===== */
+.retour {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: linear-gradient(#2d73c7, #1b4f97);
+      color: white;
+      text-decoration: none;
+      font-weight: 800;
+      box-shadow: 0 5px 12px rgba(30, 74, 117, .22);
+    }
+
+
 /* ===== SCREENS ===== */
 .screen{display:none;min-height:100dvh;flex-direction:column}
 .screen.active{display:flex}
