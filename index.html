@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -21,7 +21,7 @@
       <button class="btn btn-primary" id="btn-pvc">Joueur vs Ordinateur</button>
       <button class="btn btn-secondary" id="btn-pvp">Joueur 1 vs Joueur 2</button>
     </div>
-    <button class="btn btn-ghost" id="btn-rules">How to Play</button>
+    <button class="btn btn-ghost" id="btn-rules">Règles du jeu</button>
   </div>
 
   <!-- ===== GAME ===== -->
@@ -31,7 +31,7 @@
         <span class="player-name" id="name-p1">Joueur 1</span>
         <span class="player-tokens"><span id="tokens-p1">21</span> jetons</span>
       </div>
-      <div class="round-badge" id="round-badge">Round 1</div>
+      <div class="round-badge" id="round-badge">Manche 1</div>
       <div class="player-bar" id="bar-p2">
         <span class="player-name" id="name-p2">Ordinateur</span>
         <span class="player-tokens"><span id="tokens-p2">21</span> jetons</span>
@@ -50,7 +50,7 @@
     </section>
 
     <section class="controls" id="controls">
-      <button class="btn btn-primary btn-roll" id="btn-roll">Lancer les dés</button>
+      <button class="btn btn-primary btn-roll" id="btn-roll">Lancer</button>
     </section>
 
     <section class="log-area" id="log-area">
@@ -58,7 +58,7 @@
     </section>
 
     <footer class="game-footer">
-      <button class="btn btn-ghost btn-small" id="btn-quit">Stop</button>
+      <button class="btn btn-ghost btn-small" id="btn-quit">Quitter</button>
     </footer>
   </div>
 
@@ -91,37 +91,36 @@
         <div class="menu-die small" data-val="2">2</div>
         <div class="menu-die small" data-val="1">1</div>
       </div>
-      <h2 class="gameover-title" id="gameover-title">Victory!</h2>
+      <h2 class="gameover-title" id="gameover-title">Victoire !</h2>
       <p class="gameover-sub" id="gameover-sub"></p>
-      <button class="btn btn-primary" id="btn-replay">Play Again</button>
-      <button class="btn btn-ghost" id="btn-menu">Main Menu</button>
+      <button class="btn btn-primary" id="btn-replay">Rejouer</button>
+      <button class="btn btn-ghost" id="btn-menu">Menu principal</button>
     </div>
   </div>
 
   <!-- ===== RULES MODAL ===== -->
   <div id="rules-modal" class="modal-overlay">
-   <div class="rules-text">
-  <p>Two players, three dice, 21 tokens each. Each round, both players roll up to three times, setting aside dice to keep. The player with the <strong>higher</strong> combination pays the lower the token value of the winner's score. Win by reaching <strong>0 tokens</strong>.</p>
-  <h3>Special Combinations ("figures")</h3>
-  <ul>
-    <li><strong>"421"</strong> &mdash; 4, 2, 1. Worth <strong>20 points</strong> (all tokens minus one). Strongest combo.</li>
-    <li><strong>"Fiches"</strong> &mdash; Two aces + any other die. Worth the third die's value (2 to 6 points).</li>
-    <li><strong>"Tierce"</strong> &mdash; Three of a kind. Worth the die value (2 to 6), except 1-1-1 which is worth 7. Loses to "fiches" of the same value.</li>
-    <li><strong>"Suites"</strong> &mdash; Three consecutive numbers. Worth 2 points. 6-5-4 beats 3-2-1.</li>
-    <li><strong>"Nénette"</strong> &mdash; 2-2-1. Worth 4 points, but loses to any other 4-point combo.</li>
-  </ul>
-  <h3>Other Combos</h3>
-  <p>Worth 1 point. Ranked by highest die, then second, then third (e.g. 6-6-5 beats 5-5-3).</p>
-  <h3>"Égalité"</h3>
-  <p>Same combination, different number of rolls: the player who needed fewer rolls wins and pays the tied value.</p>
-  <h3>"Rampo"</h3>
-  <p>Same combination, same number of rolls. First player chooses:</p>
-  <ul>
-    <li><strong>"pour ce qui est"</strong> &mdash; pay the original tied value.</li>
-    <li><strong>"pour ce qui vient"</strong> &mdash; both re-roll once; pay the new value.</li>
-  </ul>
-</div>
-      <button class="btn btn-ghost" id="btn-close-rules">Close</button>
+    <div class="modal-box">
+      <h2>Règles du 421</h2>
+      <p>Deux joueurs, trois dés, <strong>21 jetons</strong> chacun. À chaque manche, chaque joueur lance jusqu’à 3 fois et peut garder certains dés. Celui qui a la combinaison <strong>la plus forte</strong> paie à l’autre la valeur de sa combinaison. Le premier à atteindre <strong>0 jeton</strong> gagne.</p>
+
+      <h3>Figures spéciales</h3>
+      <ul>
+        <li><strong>421</strong> — 4, 2, 1. La plus forte combinaison. Paie <strong>tous ses jetons sauf 1</strong>.</li>
+        <li><strong>Fiche</strong> — Deux 1 + un autre dé. Vaut la valeur du 3<sup>e</sup> dé (2 à 6).</li>
+        <li><strong>Tierce</strong> — Trois dés identiques. Vaut la valeur du dé (2 à 6), sauf 1-1-1 qui vaut 7. Une fiche de même valeur bat une tierce.</li>
+        <li><strong>Suite</strong> — Trois dés consécutifs. Vaut 2. La plus haute suite l’emporte (6-5-4 bat 3-2-1).</li>
+        <li><strong>Nénette</strong> — 2-2-1. Vaut 4, mais perd face à toute autre figure de valeur 4.</li>
+      </ul>
+
+      <h3>Combinaisons simples</h3>
+      <p>Toutes les autres valent <strong>1 jeton</strong>. Si les deux joueurs ont une combinaison simple, aucun échange.</p>
+
+      <h3>Égalité</h3>
+      <p>Même force de combinaison, mais nombre de coups différent : celui qui a utilisé le <strong>moins de coups</strong> gagne et paie.</p>
+      <p>Égalité parfaite (même combinaison + même nombre de coups) : aucun échange.</p>
+
+      <button class="btn btn-ghost" id="btn-close-rules">Fermer</button>
     </div>
   </div>
 
@@ -136,8 +135,8 @@
   <!-- ===== HANDOFF SCREEN ===== -->
   <div id="handoff" class="screen">
     <div class="handoff-inner">
-      <p class="handoff-text" id="handoff-text">Pass the phone to Player 2</p>
-      <button class="btn btn-primary" id="btn-handoff">Ready</button>
+      <p class="handoff-text" id="handoff-text">Passe le téléphone à Joueur 2</p>
+      <button class="btn btn-primary" id="btn-handoff">C'est parti</button>
     </div>
   </div>
 </div>
