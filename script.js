@@ -25,48 +25,94 @@ function getDiceEls() {
   return Array.from(diceRow.children).slice(0, 3);
 }
 
-// ===== COMBINATION EVALUATION =====
+// ===== COMBINATION EVALUATION (corrected according to rules) =====
+// Categories (higher = stronger when scores equal):
+// 100 = 421
+//  50 = Fiche
+//  40 = Tierce
+//  30 = Suite
+//  10 = Nénette
+//   0 = Simple
 function evaluate(dice) {
-  const s = [...dice].sort((a, b) => a - b);
-  const is421 = s[0]===1 && s[1]===2 && s[2]===4;
-  const isSuite = (s[2]-s[1]===1 && s[1]-s[0]===1);
-  const isNenette = s[0]===1 && s[1]===2 && s[2]===2;
-  const isTriple = s[0]===s[1] && s[1]===s[2];
-  const isFiche = s[0]===1 && s[1]===1 && s[2]!==1;
+  const s = [...dice].sort((a, b) => a - b); // ascending
 
-  let type, score, rank;
+  const is421     = s[0] === 1 && s[1] === 2 && s[2] === 4;
+  const isNenette = s[0] === 1 && s[1] === 2 && s[2] === 2;
+  const isFiche   = s[0] === 1 && s[1] === 1 && s[2] !== 1;
+  const isTriple  = s[0] === s[1] && s[1] === s[2];
+  const isSuite   = (s[1] - s[0] === 1 && s[2] - s[1] === 1);
+
+  let type, score, category;
 
   if (is421) {
-    type = '"421"'; score = 20; rank = 700;
+    type = '421';
+    score = 8;          // valeur nominale ; le paiement réel est "tous sauf 1"
+    category = 100;
   } else if (isFiche) {
-    type = '"Fiches"'; score = s[2]; rank = 300 + s[2];
+    type = 'Fiche';
+    score = s[2];
+    category = 50;
   } else if (isTriple) {
-    score = s[0] === 1 ? 7 : s[0];
-    type = '"Tierce"'; rank = 200 + score;
+    type = 'Tierce';
+    score = (s[0] === 1) ? 7 : s[0];
+    category = 40;
   } else if (isSuite) {
-    type = '"Suite"'; score = 2; rank = 100 + s[2];
+    type = 'Suite';
+    score = 2;
+    category = 30;
   } else if (isNenette) {
-    type = '"Nénette"'; score = 4; rank = -1;
+    type = 'Nénette';
+    score = 4;
+    category = 10;      // perd toujours face à une autre figure de score 4
   } else {
-    type = null; score = 1;
-    rank = s[2]*100 + s[1]*10 + s[0];
+    type = null;        // combinaison simple
+    score = 1;
+    category = 0;
   }
 
-  return { dice: [...dice], sorted: s, type, score, rank };
+  return {
+    dice: [...dice],
+    sorted: s,
+    type,
+    score,
+    category,
+    label: type || s.join('-')
+  };
 }
 
+/**
+ * Compare deux combinaisons.
+ * Retourne >0 si a gagne, <0 si b gagne, 0 si égalité parfaite.
+ */
 function compareCombos(a, b) {
-  if (a.rank !== b.rank) return a.rank > b.rank ? 1 : -1;
+  // 1. Catégorie (421 > Fiche > Tierce > Suite > Nénette > Simple)
+  if (a.category !== b.category) {
+    return a.category > b.category ? 1 : -1;
+  }
+
+  // 2. Score
+  if (a.score !== b.score) {
+    return a.score > b.score ? 1 : -1;
+  }
+
+  // 3. Même catégorie + même score → compare les dés (ordre décroissant)
+  const sa = [...a.sorted].reverse();
+  const sb = [...b.sorted].reverse();
+  for (let i = 0; i < 3; i++) {
+    if (sa[i] !== sb[i]) return sa[i] > sb[i] ? 1 : -1;
+  }
+
+  // Exactement la même combinaison
   return 0;
 }
 
 function comboLabel(c) {
-  if (c.type) return c.type;
-  return c.sorted.join('-');
+  return c.label;
 }
 
 function comboScoreLabel(c) {
-  return `${c.score} point${c.score !== 1 ? 's' : ''}`;
+  if (c.type === '421') return 'tous sauf 1';
+  return `${c.score} jeton${c.score !== 1 ? 's' : ''}`;
 }
 
 // ===== DICE RENDERING =====
@@ -278,10 +324,11 @@ function performRoll() {
     turnState.rolls++;
     isProcessing = false;
 
-    // FIX: Évaluer la combinaison AVANT de l'utiliser
+    // Évaluer la combinaison
     const combo = evaluate(turnState.values);
 
-    if (combo.type === '"421"') {
+    // Auto-stop si 421 obtenu
+    if (combo.type === '421') {
       finishTurn();
       return;
     }
@@ -311,7 +358,7 @@ function finishTurn() {
 
   const label = comboLabel(combo);
   const scoreLbl = comboScoreLabel(combo);
-  addLog(`<strong>${players[currentPlayer].name}</strong> rolled <span class="gold">${label}</span> (${scoreLbl}) in ${turnState.rolls} roll${turnState.rolls > 1 ? 's' : ''}`);
+  addLog(`<strong>${players[currentPlayer].name}</strong> a fait <span class="gold">${label}</span> (${scoreLbl}) en ${turnState.rolls} coup${turnState.rolls > 1 ? 's' : ''}`);
 
   setTimeout(() => {
     if (roundResults[0] && roundResults[1]) {
@@ -359,7 +406,7 @@ function rollAI() {
     const combo = evaluate(turnState.values);
 
     // Auto-stop on 421 only
-    if (combo.type === '"421"') {
+    if (combo.type === '421') {
       finishTurn();
       return;
     }
@@ -383,22 +430,18 @@ function rollAI() {
 function aiDecideKeep(vals) {
   const combo = evaluate(vals);
 
-  // Always stop on 421 (handled before calling this, but just in case)
-  if (combo.type === '"421"') return [true, true, true];
+  // Always stop on 421
+  if (combo.type === '421') return [true, true, true];
 
-  // Fiches: keep the two 1s, re-roll the third (can only improve)
-  if (combo.type === '"Fiches"') {
+  // Fiche: keep the two 1s, re-roll the third
+  if (combo.type === 'Fiche') {
     return vals.map(v => v === 1);
   }
 
-  // Tierce: keep all (re-rolling would break it and almost always be worse)
-  if (combo.type === '"Tierce"') return [true, true, true];
-
-  // Suite: keep all (already 2 points, re-rolling risks losing it)
-  if (combo.type === '"Suite"') return [true, true, true];
-
-  // Nenette: keep all (4 points, risky to re-roll)
-  if (combo.type === '"Nénette"') return [true, true, true];
+  // Tierce, Suite, Nénette: keep all
+  if (combo.type === 'Tierce' || combo.type === 'Suite' || combo.type === 'Nénette') {
+    return [true, true, true];
+  }
 
   // Normal combos — look for useful subsets
   const counts = {};
@@ -416,8 +459,7 @@ function aiDecideKeep(vals) {
     return vals.map(v => v === pairVal);
   }
 
-  // Single ace + two consecutive others? Could aim for suite or 421
-  // Just keep the highest die
+  // Otherwise keep the highest die
   const maxVal = Math.max(...vals);
   return vals.map(v => v === maxVal);
 }
@@ -432,24 +474,56 @@ function resolveRound() {
   showResolver(c1, c2, r1, r2);
   resolveStep = 'compare';
 
+  // Cas spécial : les deux ont une combinaison simple (score 1) → aucun échange
+  if (c1.score === 1 && c2.score === 1) {
+    $('resolver-result').innerHTML = `Les deux joueurs ont une combinaison simple.<br><span class="gold">Aucun échange de jetons.</span>`;
+    $('resolver-actions').innerHTML = '<button class="btn btn-primary" id="btn-apply">Continuer</button>';
+    $('btn-apply').onclick = () => {
+      addLog(`Aucun échange — les deux ont une combinaison simple.`);
+      setTimeout(() => nextRound(), 300);
+    };
+    return;
+  }
+
   const cmp = compareCombos(c1, c2);
 
   if (cmp !== 0) {
+    // Un joueur a une combinaison strictement plus forte
     const winner = cmp > 0 ? 0 : 1;
     const loser = 1 - winner;
-    const payment = Math.min(roundResults[winner].combo.score, players[winner].tokens);
-    showCompareResult(winner, payment, roundResults[winner].combo);
+    const wCombo = roundResults[winner].combo;
+    const payment = computePayment(winner, wCombo);
+    showCompareResult(winner, payment, wCombo);
   } else {
-    // Same combination — check "Égalité" or "Rampo"
+    // Combinaisons de force égale (même catégorie + même score + mêmes dés)
+    // → on regarde le nombre de coups
     if (r1 !== r2) {
-      const winner = r1 < r2 ? 0 : 1;
+      const winner = r1 < r2 ? 0 : 1; // moins de coups gagne
       const loser = 1 - winner;
-      const payment = Math.min(roundResults[winner].combo.score, players[winner].tokens);
+      const wCombo = roundResults[winner].combo;
+      const payment = computePayment(winner, wCombo);
       showEgaliteResult(winner, loser, payment, r1, r2);
     } else {
-      showRampoChoice();
+      // Égalité parfaite (même combo + même nombre de coups) → on annule l'échange
+      // (Rampo supprimé selon demande)
+      $('resolver-result').innerHTML = `<span class="gold">Égalité parfaite</span> (même combinaison, même nombre de coups).<br>Aucun échange de jetons.`;
+      $('resolver-actions').innerHTML = '<button class="btn btn-primary" id="btn-apply">Continuer</button>';
+      $('btn-apply').onclick = () => {
+        addLog(`Égalité parfaite — aucun échange.`);
+        setTimeout(() => nextRound(), 300);
+      };
     }
   }
+}
+
+/** Calcule le nombre de jetons que le gagnant doit payer */
+function computePayment(winnerIdx, combo) {
+  if (combo.type === '421') {
+    // Règle spéciale : tous les jetons sauf 1
+    return Math.max(0, players[winnerIdx].tokens - 1);
+  }
+  // Sinon le score de la combinaison (borné par les jetons restants)
+  return Math.min(combo.score, players[winnerIdx].tokens);
 }
 
 // ===== RESOLVER UI =====
@@ -474,14 +548,18 @@ function showResolver(c1, c2, r1, r2) {
 
 function showCompareResult(winner, payment, wCombo) {
   const loser = 1 - winner;
-  $('resolver-result').innerHTML = `<strong>${players[winner].name}</strong> wins with <span class="gold">${comboLabel(wCombo)}</span>!<br>Pays <span class="red">${payment} token${payment!==1?'s':''}</span> to ${players[loser].name}.`;
-  $('resolver-actions').innerHTML = '<button class="btn btn-primary" id="btn-apply">Apply</button>';
+  const payTxt = wCombo.type === '421'
+    ? `tous ses jetons sauf 1 (${payment})`
+    : `${payment} jeton${payment !== 1 ? 's' : ''}`;
+  $('resolver-result').innerHTML = `<strong>${players[winner].name}</strong> gagne avec <span class="gold">${comboLabel(wCombo)}</span> !<br>Paie <span class="red">${payTxt}</span> à ${players[loser].name}.`;
+  $('resolver-actions').innerHTML = '<button class="btn btn-primary" id="btn-apply">Appliquer</button>';
   $('btn-apply').onclick = () => applyPayment(winner, loser, payment);
 }
 
 function showEgaliteResult(winner, loser, payment, r1, r2) {
-  $('resolver-result').innerHTML = `<span class="gold">"Égalité"</span> — Same combination!<br>${players[winner].name} used fewer rolls (${Math.min(r1,r2)} vs ${Math.max(r1,r2)}).<br>Pays <span class="red">${payment} token${payment!==1?'s':''}</span> to ${players[loser].name}.`;
-  $('resolver-actions').innerHTML = '<button class="btn btn-primary" id="btn-apply">Apply</button>';
+  const payTxt = payment === 1 ? '1 jeton' : `${payment} jetons`;
+  $('resolver-result').innerHTML = `<span class="gold">Égalité de combinaison</span><br>${players[winner].name} a utilisé moins de coups (${Math.min(r1,r2)} vs ${Math.max(r1,r2)}).<br>Paie <span class="red">${payTxt}</span> à ${players[loser].name}.`;
+  $('resolver-actions').innerHTML = '<button class="btn btn-primary" id="btn-apply">Appliquer</button>';
   $('btn-apply').onclick = () => applyPayment(winner, loser, payment);
 }
 
@@ -563,8 +641,8 @@ function applyPayment(winner, loser, payment) {
 
   if (players[winner].tokens < 0) players[winner].tokens = 0;
 
-  addLog(`<span class="red">${players[winner].name}</span> pays <span class="gold">${payment}</span> to <span class="green">${players[loser].name}</span>`);
-  addLog(`Tokens: ${players[0].name} = ${players[0].tokens}, ${players[1].name} = ${players[1].tokens}`);
+  addLog(`<span class="red">${players[winner].name}</span> paie <span class="gold">${payment}</span> à <span class="green">${players[loser].name}</span>`);
+  addLog(`Jetons : ${players[0].name} = ${players[0].tokens}, ${players[1].name} = ${players[1].tokens}`);
 
   updateHeader();
 
