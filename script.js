@@ -5,8 +5,8 @@
 // ===== STATE =====
 let mode = null;
 let players = [
-  { name: 'Player 1', tokens: 21 },
-  { name: 'Computer', tokens: 21 }
+  { name: 'Joueur 1', tokens: 21 },
+  { name: 'Ordinateur', tokens: 21 }
 ];
 let roundNum = 0;
 let currentPlayer = 0;
@@ -176,11 +176,11 @@ function updateHeader() {
   $('name-p2').textContent = players[1].name;
   $('tokens-p1').textContent = players[0].tokens;
   $('tokens-p2').textContent = players[1].tokens;
-  $('round-badge').textContent = `Round ${roundNum}`;
+  $('round-badge').textContent = `Manche ${roundNum}`;
 }
 
 function updateTurnIndicator() {
-  $('turn-indicator').textContent = `${players[currentPlayer].name}'s Turn`;
+  $('turn-indicator').textContent = `Au tour de ${players[currentPlayer].name}`;
 }
 
 function updateRollInfo() {
@@ -212,8 +212,8 @@ function showStopButton() {
   if (!btn) {
     btn = document.createElement('button');
     btn.id = 'btn-stop';
-    btn.className = 'btn btn-ghost btn-small';
-    btn.textContent = 'Arrêter';
+    btn.className = 'btn btn-stop';
+    btn.textContent = 'Arrêter ici';
     btn.addEventListener('click', () => {
       if (turnState && !turnState.finished && turnState.rolls > 0) {
         finishTurn();
@@ -233,8 +233,8 @@ function hideStopButton() {
 function startGame(m) {
   mode = m;
   players = [
-    { name: 'Player 1', tokens: 21 },
-    { name: m === 'pvc' ? 'Computer' : 'Player 2', tokens: 21 }
+    { name: 'Joueur 1', tokens: 21 },
+    { name: m === 'pvc' ? 'Ordinateur' : 'Joueur 2', tokens: 21 }
   ];
   roundNum = 0;
   clearLog();
@@ -249,7 +249,7 @@ function nextRound() {
   resolveStep = 'compare';
   updateHeader();
   clearLog();
-  addLog(`<strong>Round ${roundNum}</strong>`);
+  addLog(`<strong>Manche ${roundNum}</strong>`);
   startTurn(0);
 }
 
@@ -421,7 +421,7 @@ function rollAI() {
     turnState.kept = keep;
     dice.forEach((_, i) => setDieState(i, keep[i] ? 'locked' : null));
 
-    $('roll-info').textContent = 'Computer is thinking...';
+    $('roll-info').textContent = "L'ordinateur réfléchit...";
 
     setTimeout(() => rollAI(), 700);
   }, delay);
@@ -539,8 +539,8 @@ function showResolver(c1, c2, r1, r2) {
     `<div class="mini-die">${v}</div>`
   ).join('');
 
-  $('res-score-p1').innerHTML = `<span class="gold">${comboLabel(c1)}</span> (${comboScoreLabel(c1)})<br><small>${r1} roll${r1>1?'s':''}</small>`;
-  $('res-score-p2').innerHTML = `<span class="gold">${comboLabel(c2)}</span> (${comboScoreLabel(c2)})<br><small>${r2} roll${r2>1?'s':''}</small>`;
+  $('res-score-p1').innerHTML = `<span class="gold">${comboLabel(c1)}</span> (${comboScoreLabel(c1)})<br><small>${r1} coup${r1>1?'s':''}</small>`;
+  $('res-score-p2').innerHTML = `<span class="gold">${comboLabel(c2)}</span> (${comboScoreLabel(c2)})<br><small>${r2} coup${r2>1?'s':''}</small>`;
 
   $('resolver-result').innerHTML = '';
   $('resolver-actions').innerHTML = '';
@@ -655,8 +655,8 @@ function applyPayment(winner, loser, payment) {
 
 function showGameOver() {
   const winner = players[0].tokens <= 0 ? 0 : 1;
-  $('gameover-title').textContent = `${players[winner].name} Wins!`;
-  $('gameover-sub').textContent = `Reached 0 tokens in ${roundNum} rounds.`;
+  $('gameover-title').textContent = `${players[winner].name} gagne !`;
+  $('gameover-sub').textContent = `Atteint 0 jeton en ${roundNum} manches.`;
   showScreen('gameover');
 }
 
