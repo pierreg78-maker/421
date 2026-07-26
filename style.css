@@ -61,6 +61,18 @@ button:focus-visible{outline:2px solid #c99a2e;outline-offset:2px}
 .btn-ghost:active{color:var(--fg)}
 .btn-small{padding:8px 16px;font-size:13px}
 .btn-roll{width:100%;font-size:18px;padding:16px;border-radius:14px}
+.btn-stop{
+  width:100%;
+  font-size:16px;
+  font-weight:700;
+  padding:14px 20px;
+  border-radius:12px;
+  margin-top:10px;
+  background:var(--card);
+  color:var(--fg);
+  border:1.5px solid var(--border);
+}
+.btn-stop:active{transform:scale(.97);background:var(--border)}
 
 /* ===== GAME HEADER ===== */
 .game-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
