@@ -1,0 +1,23 @@
+/* ===== ÉCONOMIE DU VILLAGE ===== */
+.economie-panel{width:100%;max-width:340px;margin:10px 0 4px;padding:14px;border:1px solid var(--border);border-radius:16px;background:rgba(37,33,24,.86);text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+.economie-title{font-size:14px;font-weight:800;color:var(--fg);margin-bottom:10px}
+.mise-options{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mise-btn{min-height:44px;padding:8px 4px;border-radius:11px;background:var(--surface);border:1.5px solid var(--border);color:var(--fg);font-size:15px;font-weight:900}
+.mise-btn.active{background:var(--accent);border-color:var(--accent);color:#1a1410;box-shadow:0 0 0 2px rgba(201,154,46,.2)}
+.solde-village{margin-top:9px;min-height:18px;font-size:12px;color:var(--muted)}
+.solde-village strong{color:var(--accent)}
+.mise-en-cours{text-align:center;padding:5px 12px;background:#16130f;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)}
+.mise-en-cours strong{color:var(--accent)}
+.btn-online{background:linear-gradient(180deg,#2d73c7,#1b4f97);color:#fff;box-shadow:0 3px 12px rgba(45,115,199,.24)}
+#online{justify-content:center;align-items:center;padding:24px;background:radial-gradient(ellipse at 50% 35%,#1e1a14 0%,#0d0b09 72%)}
+.online-card{width:100%;max-width:380px;padding:24px;border:1px solid var(--border);border-radius:18px;background:var(--surface);display:flex;flex-direction:column;gap:14px;text-align:center}
+.online-card h2{color:var(--accent);font-size:25px}
+.online-card p{color:var(--muted);font-size:14px;line-height:1.45}
+.online-separator{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+.online-separator::before,.online-separator::after{content:'';height:1px;background:var(--border);flex:1}
+.online-input{width:100%;padding:14px;border:1.5px solid var(--border);border-radius:12px;background:var(--card);color:var(--fg);font-size:22px;font-weight:900;text-align:center;text-transform:uppercase;letter-spacing:4px;outline:none}
+.online-input:focus{border-color:var(--accent)}
+.online-status{min-height:22px;font-size:13px;color:var(--muted);line-height:1.4}
+.online-code{font-size:34px;font-weight:900;letter-spacing:6px;color:var(--accent)}
+.btn:disabled{opacity:.55;cursor:wait;transform:none!important}
+@media(max-height:760px){.menu-sub{margin-bottom:18px}.economie-panel{margin-top:3px;padding:10px}.menu-dice-row{margin-bottom:5px}.menu-title{font-size:54px}}
