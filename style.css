@@ -20,7 +20,7 @@ button:focus-visible{outline:2px solid #c99a2e;outline-offset:2px}
       min-height: 46px;
       padding: 0 18px;
       border-radius: 999px;
-      background: linear-gradient(#f5427e, #1b4f97);
+      background: linear-gradient(#f5427e, #f5427b);
       color: white;
       text-decoration: none;
       font-weight: 800;
