@@ -47,7 +47,7 @@
   }
 
   async function appeler(action, donnees = {}) {
-    if (!window.Village?.api?.post) {
+    if (!window.Village?.api?.get) {
       throw new Error('Service Village indisponible.');
     }
 
@@ -56,12 +56,18 @@
       throw new Error('Choisissez d’abord un profil dans le Village.');
     }
 
-    const resultat = await Village.api.post({
-      action,
+    const parametres = {
       profilId: profil.id,
       prenom: profil.prenom,
       ...donnees
-    });
+    };
+
+    // Les tableaux doivent être convertis en JSON pour voyager dans l’URL.
+    if (Array.isArray(parametres.des)) {
+      parametres.des = JSON.stringify(parametres.des);
+    }
+
+    const resultat = await Village.api.get(action, parametres);
 
     if (!resultat || resultat.ok === false) {
       throw new Error(
