@@ -14,6 +14,9 @@ let turnState = null;
 let roundResults = [null, null];
 let resolveStep = 'compare';
 let isProcessing = false;
+let onlineTourId = '';
+let onlineSalon = null;
+let onlineLastRoundShown = 0;
 
 // ===== DOM REFS =====
 const $ = id => document.getElementById(id);
@@ -230,8 +233,18 @@ function hideStopButton() {
 }
 
 // ===== GAME FLOW =====
-function startGame(m) {
+function startGame(m, options = {}) {
   mode = m;
+  if (m === 'online') {
+    onlineSalon = options.salon || onlineSalon;
+    onlineTourId = '';
+    onlineLastRoundShown = 0;
+    clearLog();
+    showScreen('game');
+    if (onlineSalon) applyOnlineSalon(onlineSalon);
+    return;
+  }
+
   players = [
     { name: 'Joueur 1', tokens: 21 },
     { name: m === 'pvc' ? 'Ordinateur' : 'Joueur 2', tokens: 21 }
@@ -355,6 +368,19 @@ function finishTurn() {
 
   const combo = evaluate(turnState.values);
   roundResults[currentPlayer] = { combo, rolls: turnState.rolls };
+
+  if (mode === 'online') {
+    addLog(`<strong>${players[currentPlayer].name}</strong> a fait <span class="gold">${comboLabel(combo)}</span> (${comboScoreLabel(combo)}) en ${turnState.rolls} coup${turnState.rolls > 1 ? 's' : ''}`);
+    $('turn-indicator').textContent = 'Enregistrement du tour…';
+    Promise.resolve(window.Distant421?.terminerTour?.(turnState.values, turnState.rolls, onlineTourId))
+      .catch(erreur => {
+        isProcessing = false;
+        turnState.finished = false;
+        $('turn-indicator').textContent = erreur.message || 'Le tour n’a pas pu être enregistré.';
+        showRollButton('Réessayer');
+      });
+    return;
+  }
 
   const label = comboLabel(combo);
   const scoreLbl = comboScoreLabel(combo);
@@ -660,6 +686,100 @@ function showGameOver() {
   showScreen('gameover');
 }
 
+
+// ===== MODE DISTANT =====
+function onlineIndex(joueurId) {
+  return joueurId === 'J2' ? 1 : 0;
+}
+
+function comboFromServer(resultat) {
+  if (!resultat) return null;
+  return evaluate(Array.isArray(resultat.des) ? resultat.des : [1, 1, 1]);
+}
+
+function afficherMancheDistante(manche) {
+  if (!manche || manche.numeroManche <= onlineLastRoundShown) return;
+  onlineLastRoundShown = manche.numeroManche;
+  const r1 = manche.resultats?.J1;
+  const r2 = manche.resultats?.J2;
+  if (!r1 || !r2) return;
+
+  const c1 = comboFromServer(r1);
+  const c2 = comboFromServer(r2);
+  addLog(`<strong>Manche ${manche.numeroManche}</strong> — ${players[0].name}: <span class="gold">${comboLabel(c1)}</span>, ${players[1].name}: <span class="gold">${comboLabel(c2)}</span>`);
+  if (manche.gagnant) {
+    const gagnant = onlineIndex(manche.gagnant);
+    const perdant = 1 - gagnant;
+    addLog(`<span class="red">${players[gagnant].name}</span> paie <span class="gold">${manche.jetonsTransferes}</span> à <span class="green">${players[perdant].name}</span>`);
+  } else {
+    addLog(manche.simples ? 'Deux combinaisons simples : aucun échange.' : 'Égalité parfaite : aucun échange.');
+  }
+}
+
+function applyOnlineSalon(salon) {
+  if (!salon) return;
+  onlineSalon = salon;
+  mode = 'online';
+  const session = window.Distant421?.getSession?.();
+  const localId = session?.joueurId;
+  const localIndex = onlineIndex(localId);
+
+  players = [
+    { name: salon.joueurs?.J1?.prenom || 'Joueur 1', tokens: Number(salon.jetons?.J1 ?? 21) },
+    { name: salon.joueurs?.J2?.prenom || 'Joueur 2', tokens: Number(salon.jetons?.J2 ?? 21) }
+  ];
+  roundNum = Number(salon.numeroManche || 1);
+  updateHeader();
+  showScreen('game');
+
+  const historique = salon.historiqueManches || [];
+  if (historique.length) afficherMancheDistante(historique[historique.length - 1]);
+
+  if (salon.statut === 'terminee') {
+    hideControls();
+    const gagnant = onlineIndex(salon.gagnant);
+    $('gameover-title').textContent = `${players[gagnant].name} gagne !`;
+    $('gameover-sub').textContent = salon.pot > 0
+      ? `Le pot de ${salon.pot} pièces d’or a été attribué.`
+      : `Partie terminée en ${Math.max(1, roundNum)} manches.`;
+    showScreen('gameover');
+    return;
+  }
+
+  if (salon.statut === 'annulee') {
+    hideControls();
+    $('turn-indicator').textContent = 'La partie a été annulée.';
+    return;
+  }
+
+  if (salon.statut !== 'en_cours') return;
+
+  const joueurActuelIndex = onlineIndex(salon.joueurActuel);
+  currentPlayer = joueurActuelIndex;
+  updateTurnIndicator();
+
+  if (salon.joueurActuel === localId && !salon.resultats?.[localId]) {
+    if (onlineTourId !== salon.tourId || !turnState || turnState.finished) {
+      onlineTourId = salon.tourId;
+      startTurn(localIndex);
+      $('turn-indicator').textContent = 'À vous de jouer';
+    }
+  } else {
+    onlineTourId = salon.tourId || onlineTourId;
+    turnState = null;
+    hideControls();
+    renderAllDice([null, null, null]);
+    $('roll-info').textContent = '';
+    $('turn-indicator').textContent = `En attente de ${players[joueurActuelIndex].name}…`;
+  }
+}
+
+window.Jeu421 = {
+  startOnline(salon) { startGame('online', { salon }); },
+  applyOnlineSalon,
+  getMode: () => mode
+};
+
 // ===== EVENT LISTENERS =====
 $('btn-pvc').addEventListener('click', () => startGame('pvc'));
 $('btn-pvp').addEventListener('click', () => startGame('pvp'));
@@ -714,13 +834,22 @@ function attachDiceListeners() {
 // Attacher les écouteurs au lancement
 attachDiceListeners();
 
-$('btn-quit').addEventListener('click', () => showScreen('menu'));
+$('btn-quit').addEventListener('click', () => {
+  if (mode === 'online') window.Distant421?.quitterSalon?.();
+  else showScreen('menu');
+});
 $('btn-handoff').addEventListener('click', () => {
   showScreen('game');
   showRollButton('Lancer');
 });
-$('btn-replay').addEventListener('click', () => startGame(mode));
-$('btn-menu').addEventListener('click', () => showScreen('menu'));
+$('btn-replay').addEventListener('click', () => {
+  if (mode === 'online') window.Distant421?.retourMenu?.();
+  else startGame(mode);
+});
+$('btn-menu').addEventListener('click', () => {
+  if (mode === 'online') window.Distant421?.retourMenu?.();
+  else showScreen('menu');
+});
 
 // ===== INIT =====
 showScreen('menu');
