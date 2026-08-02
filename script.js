@@ -216,7 +216,7 @@ function showStopButton() {
     btn = document.createElement('button');
     btn.id = 'btn-stop';
     btn.className = 'btn btn-stop';
-    btn.textContent = 'Arrêter ici';
+    btn.textContent = 'Garder ce tirage';
     btn.addEventListener('click', () => {
       if (turnState && !turnState.finished && turnState.rolls > 0) {
         finishTurn();
@@ -224,6 +224,8 @@ function showStopButton() {
     });
     $('controls').appendChild(btn);
   }
+  btn.textContent = 'Garder ce tirage';
+  btn.disabled = false;
   btn.style.display = '';
 }
 
