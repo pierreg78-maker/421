@@ -17,6 +17,7 @@ let isProcessing = false;
 let onlineTourId = '';
 let onlineSalon = null;
 let onlineLastRoundShown = 0;
+let onlineActiveTurnKey = '';
 
 // ===== DOM REFS =====
 const $ = id => document.getElementById(id);
@@ -216,7 +217,7 @@ function showStopButton() {
     btn = document.createElement('button');
     btn.id = 'btn-stop';
     btn.className = 'btn btn-stop';
-    btn.textContent = 'Garder ce tirage';
+    btn.textContent = 'Arrêter ici';
     btn.addEventListener('click', () => {
       if (turnState && !turnState.finished && turnState.rolls > 0) {
         finishTurn();
@@ -224,8 +225,6 @@ function showStopButton() {
     });
     $('controls').appendChild(btn);
   }
-  btn.textContent = 'Garder ce tirage';
-  btn.disabled = false;
   btn.style.display = '';
 }
 
@@ -241,6 +240,7 @@ function startGame(m, options = {}) {
     onlineSalon = options.salon || onlineSalon;
     onlineTourId = '';
     onlineLastRoundShown = 0;
+    onlineActiveTurnKey = '';
     clearLog();
     showScreen('game');
     if (onlineSalon) applyOnlineSalon(onlineSalon);
@@ -760,15 +760,23 @@ function applyOnlineSalon(salon) {
   currentPlayer = joueurActuelIndex;
   updateTurnIndicator();
 
+  const tourKey = `${salon.numeroManche || 0}:${salon.tourId || ''}:${salon.joueurActuel || ''}`;
+
   if (salon.joueurActuel === localId && !salon.resultats?.[localId]) {
-    if (onlineTourId !== salon.tourId || !turnState || turnState.finished) {
+    // On démarre chaque tour à partir d'une clé complète.
+    // Cela évite qu'une ancienne manche ou un ancien tour reste bloqué en mémoire.
+    if (onlineActiveTurnKey !== tourKey || !turnState || turnState.finished) {
+      onlineActiveTurnKey = tourKey;
       onlineTourId = salon.tourId;
+      isProcessing = false;
       startTurn(localIndex);
       $('turn-indicator').textContent = 'À vous de jouer';
     }
   } else {
     onlineTourId = salon.tourId || onlineTourId;
+    onlineActiveTurnKey = '';
     turnState = null;
+    isProcessing = false;
     hideControls();
     renderAllDice([null, null, null]);
     $('roll-info').textContent = '';
