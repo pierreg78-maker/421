@@ -775,12 +775,31 @@ function applyOnlineSalon(salon) {
   } else {
     onlineTourId = salon.tourId || onlineTourId;
     onlineActiveTurnKey = '';
-    turnState = null;
     isProcessing = false;
     hideControls();
-    renderAllDice([null, null, null]);
-    $('roll-info').textContent = '';
-    $('turn-indicator').textContent = `En attente de ${players[joueurActuelIndex].name}…`;
+
+    // Si le joueur local vient de terminer son tour, conserver visuellement
+    // ses dés pendant que l'adversaire joue. La logique est volontairement
+    // symétrique : elle fonctionne de la même façon pour J1 et J2.
+    const resultatLocal = localId ? salon.resultats?.[localId] : null;
+
+    if (resultatLocal && Array.isArray(resultatLocal.des)) {
+      renderAllDice(resultatLocal.des);
+      const dice = getDiceEls();
+      dice.forEach((_, i) => setDieState(i, 'locked'));
+      turnState = null;
+      $('roll-info').textContent = 'Votre résultat est enregistré';
+      $('turn-indicator').textContent =
+        `Résultat enregistré — en attente de ${players[joueurActuelIndex].name}…`;
+    } else {
+      // Le joueur local n'a pas encore joué : plateau neutre en attendant son tour.
+      turnState = null;
+      renderAllDice([null, null, null]);
+      const dice = getDiceEls();
+      dice.forEach((_, i) => setDieState(i, null));
+      $('roll-info').textContent = '';
+      $('turn-indicator').textContent = `En attente de ${players[joueurActuelIndex].name}…`;
+    }
   }
 }
 
